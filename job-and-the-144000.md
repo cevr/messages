@@ -1,5 +1,3 @@
-I'll create a Bible study outline on Job as a type of the 144,000, following the Seventh-day Adventist perspective and the format you've requested.
-
 # Standing Through the Storm: Job as a Type of the 144,000
 
 **Tags:** #end-time #144000 #great-controversy #character-perfection #final-generation #job
@@ -253,6 +251,4 @@ I'll create a Bible study outline on Job as a type of the 144,000, following the
      * **Daniel 12:3** - "They that be wise shall shine as the brightness of the firmament; and they that turn many to righteousness as the stars for ever and ever"
 * _Speaking note: "Like Job, we may not see the full picture of how our faithfulness impacts the cosmic conflict. But God calls us to trust Him fully, knowing that our present trials are preparing us for a greater purpose in the final crisis."_
 * **Revelation 3:21** - "To him that overcometh will I grant to sit with me in my throne, even as I also overcame, and am set down with my Father in his throne"
-
-**Closing Hymn:** #616 "Soldiers of Christ, Arise"
-"Soldiers of Christ, arise, and put your armor on, strong in the strength which God supplies through His eternal Son; strong in the Lord of hosts, and in His mighty power, who in the strength of Jesus trusts is more than conqueror."
+* Closing prayer for courage and faithfulness

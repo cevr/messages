@@ -15,7 +15,7 @@
 * **Genesis 2:8, 15** - "The LORD God planted a garden eastward in Eden... Then the LORD God took the man and put him in the garden of Eden to tend and keep it."
 * The call to country living is not just a preference but a prophetic imperative for these last days
 * **Revelation 18:4** - "Come out of her, my people, lest you share in her sins, and lest you receive of her plagues."
-* _Speaking note: Share personal testimony of how your own connection with nature strengthened your relationship with God. For example: "Walking through the quiet woods early one morning, I was overwhelmed by the intricate design of a spider's web glistening with dew. In that moment, I sensed God's presence more powerfully than I ever had in a crowded city street."_
+* _Speaking note: "Consider how nature reveals God's character in ways that human-made environments cannot. A spider's web glistening with morning dew, a dramatic sunset painting the sky, or the intricate design of a single snowflake—these silent witnesses speak of a Creator whose attention to detail and beauty often escapes us in the noise and distraction of city life."_
 
 ## I. The Biblical Foundation for Country Living
 * **Genesis 13:14-18** - Abraham lived in the country, pitched his tent, and built an altar to the Lord
@@ -259,6 +259,4 @@
   * **For those already in transition:** Will you commit to developing one new self-sufficiency skill this month?
   * **For those unable to relocate immediately:** Will you begin implementing country living principles where you are?
 * _Speaking note: "Heaven will be worth every sacrifice, every inconvenience, and every challenge faced in following God's guidance. The question is not whether we can afford to follow His counsel on country living, but whether we can afford not to."_
-
-**Closing Hymn:** #547 "Be Thou My Vision"
-"Be Thou my Vision, O Lord of my heart; naught be all else to me, save that Thou art. Thou my best thought, by day or by night, waking or sleeping, Thy presence my light."
+* Closing prayer for divine guidance and courage to follow His leading

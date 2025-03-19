@@ -114,6 +114,19 @@ The completed content should:
 - Avoid redundancy across sections
 - Eliminate excessive elaboration in favor of clear, concise points
 
+## Reflection and Review Process
+
+- After completing the initial outline, step back and think deeply about the overall progression
+- Ensure the presentation flows logically from one section to the next
+- Check that concepts build gradually in complexity where appropriate (not as a requirement for all presentations)
+- Verify that the content respects the 45-minute timeframe
+- Review transitions between sections to maintain coherence
+- Adjust section lengths if necessary to balance depth of key points with time constraints
+- Consider how the opening and closing elements frame the central message
+- Ask: "Does this journey make sense to someone encountering these ideas for the first time?"
+- Ensure each section serves the central theme without unnecessary detours
+- Make deliberate choices about where complexity is needed and where simplicity serves best
+
 # Example Outline
 
 ```

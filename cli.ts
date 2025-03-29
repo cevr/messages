@@ -5,7 +5,7 @@ import { NodeRuntime } from "@effect/platform-node";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { generateObject, generateText } from "ai";
 
-import { isCancel, text } from "@clack/prompts";
+import { isCancel, text, spinner, log as clackLog } from "@clack/prompts";
 import { z } from "zod";
 import dotenv from "dotenv";
 import {
@@ -22,8 +22,6 @@ const MessageSchema = z.object({
   filename: z.string(),
   message: z.string(),
 });
-
-type Message = z.infer<typeof MessageSchema>;
 
 const yesRegex = /^y(es)?$/i;
 
@@ -43,6 +41,25 @@ class Model extends Effect.Service<Model>()("Model", {
     return model;
   }),
 }) {}
+
+const spin = <V, E, R>(message: string, job: Effect.Effect<V, E, R>) =>
+  Effect.gen(function* () {
+    const start = Date.now();
+    const s = yield* Effect.sync(() => spinner());
+    yield* Effect.sync(() => s.start(message + "..."));
+    const result = yield* job;
+    yield* Effect.sync(() =>
+      s.stop(`${message} done! (${msToMinutes(Date.now() - start)})`)
+    );
+    return result;
+  });
+
+const log = {
+  info: (message: string) => Effect.sync(() => clackLog.info(message)),
+  error: (message: string) => Effect.sync(() => clackLog.error(message)),
+  success: (message: string) => Effect.sync(() => clackLog.success(message)),
+  warn: (message: string) => Effect.sync(() => clackLog.warn(message)),
+};
 
 const program = Effect.gen(function* (_) {
   const startTime = Date.now();
@@ -67,80 +84,47 @@ const program = Effect.gen(function* (_) {
     return;
   }
 
-  yield* Effect.log("Generating message outline...");
-  const generateStartTime = Date.now();
+  const response = yield* spin(
+    "Generating message outline",
+    Effect.tryPromise({
+      try: () =>
+        generateObject({
+          model,
+          schema: MessageSchema,
+          messages: [
+            {
+              role: "system",
+              content: systemMessagePrompt,
+            },
+            {
+              role: "user",
+              content: userMessagePrompt(topic),
+            },
+          ],
+        }),
+      catch: (cause: unknown) =>
+        new Error(
+          `Failed to generate message: ${
+            cause instanceof Error ? cause.message : String(cause)
+          }`
+        ),
+    })
+  );
 
-  const response = yield* Effect.tryPromise({
-    try: () =>
-      generateObject({
-        model,
-        schema: MessageSchema,
-        messages: [
-          {
-            role: "system",
-            content: systemMessagePrompt,
-          },
-          {
-            role: "user",
-            content: userMessagePrompt(topic),
-          },
-        ],
-      }),
-    catch: (cause: unknown) =>
-      new Error(
-        `Failed to generate message: ${
-          cause instanceof Error ? cause.message : String(cause)
-        }`
-      ),
-  });
-
-  const result = response as unknown as Message;
+  const result = response.object;
   let { filename, message } = result;
 
-  yield* Effect.log(
-    `Message outline generated in ${msToMinutes(Date.now() - generateStartTime)}`
-  );
-
-  yield* Effect.log("Checking if message needs revision...");
-  const reviewStartTime = Date.now();
-
-  const reviewResponse = yield* Effect.tryPromise({
-    try: () =>
-      generateText({
-        model,
-        messages: [
-          {
-            role: "system",
-            content: systemReviewPrompt,
-          },
-          {
-            role: "user",
-            content: userReviewPrompt(message),
-          },
-        ],
-      }),
-    catch: (cause: unknown) =>
-      new Error(
-        `Failed to review message: ${
-          cause instanceof Error ? cause.message : String(cause)
-        }`
-      ),
-  });
-
-  yield* Effect.log(
-    `Message review completed in ${msToMinutes(Date.now() - reviewStartTime)}`
-  );
-
-  const needsRevision = yesRegex.test(reviewResponse.text.trim());
-
-  if (needsRevision) {
-    yield* Effect.log("Message needs revision. Revising...");
-    const reviseStartTime = Date.now();
-
-    const revisedMessage = yield* Effect.tryPromise({
+  const reviewResponse = yield* spin(
+    "Reviewing message",
+    Effect.tryPromise({
       try: () =>
-        generateText({
+        generateObject({
           model,
+          schema: z.object({
+            needsRevision: z
+              .boolean()
+              .describe("Whether the message needs revision"),
+          }),
           messages: [
             {
               role: "system",
@@ -148,52 +132,86 @@ const program = Effect.gen(function* (_) {
             },
             {
               role: "user",
-              content: userRevisePrompt(message),
+              content: userReviewPrompt(message),
             },
           ],
         }),
       catch: (cause: unknown) =>
         new Error(
-          `Failed to revise message: ${
+          `Failed to review message: ${
             cause instanceof Error ? cause.message : String(cause)
           }`
         ),
-    });
+    })
+  );
+
+  const needsRevision = reviewResponse.object.needsRevision;
+
+  yield* log.info(`needsRevision: ${needsRevision}`);
+
+  if (needsRevision) {
+    const revisedMessage = yield* spin(
+      "Revising message",
+      Effect.tryPromise({
+        try: () =>
+          generateText({
+            model,
+            messages: [
+              {
+                role: "system",
+                content: systemReviewPrompt,
+              },
+              {
+                role: "user",
+                content: userRevisePrompt(message),
+              },
+            ],
+          }),
+        catch: (cause: unknown) =>
+          new Error(
+            `Failed to revise message: ${
+              cause instanceof Error ? cause.message : String(cause)
+            }`
+          ),
+      })
+    );
 
     message = revisedMessage.text;
-    yield* Effect.log(
-      `Message revision completed in ${msToMinutes(Date.now() - reviseStartTime)}`
-    );
   }
 
   const messagesDir = path.join(process.cwd(), "messages");
   const filePath = path.join(messagesDir, filename);
 
-  yield* Effect.log(`Creating messages directory if it doesn't exist...`);
-  yield* Effect.try({
-    try: () => fs.mkdirSync(messagesDir, { recursive: true }),
-    catch: (cause: unknown) =>
-      new Error(
-        `Failed to create messages directory: ${
-          cause instanceof Error ? cause.message : String(cause)
-        }`
-      ),
-  });
+  yield* spin(
+    "Ensuring messages directory exists",
+    Effect.try({
+      try: () => fs.mkdirSync(messagesDir, { recursive: true }),
+      catch: (cause: unknown) =>
+        new Error(
+          `Failed to create messages directory: ${
+            cause instanceof Error ? cause.message : String(cause)
+          }`
+        ),
+    })
+  );
 
-  yield* Effect.log(`Writing message to ${filePath}...`);
-
-  yield* Effect.try({
-    try: () => fs.writeFileSync(filePath, message),
-    catch: (cause: unknown) =>
-      new Error(
-        `Failed to write file: ${
-          cause instanceof Error ? cause.message : String(cause)
-        }`
-      ),
-  });
+  yield* spin(
+    "Writing message to file",
+    Effect.try({
+      try: () => fs.writeFileSync(filePath, message),
+      catch: (cause: unknown) =>
+        new Error(
+          `Failed to write file: ${
+            cause instanceof Error ? cause.message : String(cause)
+          }`
+        ),
+    })
+  );
 
   const totalTime = msToMinutes(Date.now() - startTime);
-  yield* Effect.log(`✅ Message generated successfully! (Total time: ${totalTime})`);
+  yield* log.success(
+    `Message generated successfully! (Total time: ${totalTime})`
+  );
 });
 
 const main = program.pipe(Effect.provide(Model.Default));

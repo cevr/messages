@@ -1,6 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
-import { Effect, Schema } from "effect";
+import { Data, Effect, Schema } from "effect";
 import { NodeRuntime } from "@effect/platform-node";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { generateObject, generateText } from "ai";
@@ -18,12 +18,30 @@ import {
 
 dotenv.config();
 
+class PromptError extends Data.TaggedError("PromptError")<{
+  cause: unknown;
+}> {}
+
+class OutlineError extends Data.TaggedError("OutlineError")<{
+  cause: unknown;
+}> {}
+
+class ReviewError extends Data.TaggedError("ReviewError")<{
+  cause: unknown;
+}> {}
+
+class ReviseError extends Data.TaggedError("ReviseError")<{
+  cause: unknown;
+}> {}
+
+class FilesystemError extends Data.TaggedError("FilesystemError")<{
+  cause: unknown;
+}> {}
+
 const MessageSchema = z.object({
   filename: z.string(),
   message: z.string(),
 });
-
-const yesRegex = /^y(es)?$/i;
 
 const msToMinutes = (ms: number) => {
   const minutes = Math.floor(ms / 60000);
@@ -72,11 +90,9 @@ const program = Effect.gen(function* (_) {
         placeholder: "e.g., The Power of Prayer",
       }),
     catch: (cause: unknown) =>
-      new Error(
-        `Failed to get topic: ${
-          cause instanceof Error ? cause.message : String(cause)
-        }`
-      ),
+      new PromptError({
+        cause,
+      }),
   });
 
   if (isCancel(topic)) {
@@ -103,11 +119,9 @@ const program = Effect.gen(function* (_) {
           ],
         }),
       catch: (cause: unknown) =>
-        new Error(
-          `Failed to generate message: ${
-            cause instanceof Error ? cause.message : String(cause)
-          }`
-        ),
+        new OutlineError({
+          cause,
+        }),
     })
   );
 
@@ -137,11 +151,9 @@ const program = Effect.gen(function* (_) {
           ],
         }),
       catch: (cause: unknown) =>
-        new Error(
-          `Failed to review message: ${
-            cause instanceof Error ? cause.message : String(cause)
-          }`
-        ),
+        new ReviewError({
+          cause,
+        }),
     })
   );
 
@@ -168,11 +180,9 @@ const program = Effect.gen(function* (_) {
             ],
           }),
         catch: (cause: unknown) =>
-          new Error(
-            `Failed to revise message: ${
-              cause instanceof Error ? cause.message : String(cause)
-            }`
-          ),
+          new ReviseError({
+            cause,
+          }),
       })
     );
 
@@ -187,11 +197,9 @@ const program = Effect.gen(function* (_) {
     Effect.try({
       try: () => fs.mkdirSync(messagesDir, { recursive: true }),
       catch: (cause: unknown) =>
-        new Error(
-          `Failed to create messages directory: ${
-            cause instanceof Error ? cause.message : String(cause)
-          }`
-        ),
+        new FilesystemError({
+          cause,
+        }),
     })
   );
 
@@ -200,11 +208,9 @@ const program = Effect.gen(function* (_) {
     Effect.try({
       try: () => fs.writeFileSync(filePath, message),
       catch: (cause: unknown) =>
-        new Error(
-          `Failed to write file: ${
-            cause instanceof Error ? cause.message : String(cause)
-          }`
-        ),
+        new FilesystemError({
+          cause,
+        }),
     })
   );
 
